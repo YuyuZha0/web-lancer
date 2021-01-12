@@ -1,0 +1,15 @@
+{
+  "serverPort": 8080,
+  "dataSources": [
+    {
+      "jdbcUrl": "jdbc:mysql://gz-cdb-cg9uhp5t.sql.tencentcdb.com:62177/common_data?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=UTF8&zeroDateTimeBehavior=convertToNull&useSSL=true",
+      "username": "bi_yonghui_board",
+      "password": "vEMXntZtuaVvh822",
+      "driverClassName": "com.mysql.cj.jdbc.Driver",
+      "id": "default"
+    }
+  ],
+  "interfaceConfigPath": [
+    "/Users/fishzhao/IdeaProjects/mybatis-jackson/conf/interface.json"
+  ]
+}
