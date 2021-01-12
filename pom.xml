@@ -8,7 +8,7 @@
     <artifactId>web-lancer</artifactId>
     <version>0.0.1-SNAPSHOT</version>
 
-    <name>mybatis-jackson</name>
+    <name>web-lancer</name>
     <url>http://www.example.com</url>
 
     <properties>
