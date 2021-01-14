@@ -19,7 +19,7 @@ import java.util.Set;
  * @author fishzhao
  * @since 2021-01-12
  */
-public final class JsonInterfaceConfig implements DynamicInterfaceConfig {
+public final class JsonInterfaceDefinition implements DynamicInterfaceDefinition {
 
   private final String dataSourceId;
   private final String uri;
@@ -30,7 +30,7 @@ public final class JsonInterfaceConfig implements DynamicInterfaceConfig {
   private final JsonNode parameterValidation;
 
   @JsonCreator
-  public JsonInterfaceConfig(
+  public JsonInterfaceDefinition(
       @JsonProperty("dataSourceId") String dataSourceId,
       @JsonProperty("uri") String uri,
       @JsonProperty("httpMethods") @JsonAlias("httpMethod") Set<HttpMethod> httpMethods,

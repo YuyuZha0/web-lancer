@@ -20,30 +20,30 @@ public final class AppMetaConfig {
 
   private final int serverPort;
   private final List<ObjectNode> dataSources;
-  private final List<String> interfaceConfigPath;
+  private final List<String> interfaceDefinitionPath;
 
   @JsonCreator
   public AppMetaConfig(
-      @JsonProperty("serverPort") int serverPort,
-      @JsonProperty("dataSources") @JsonAlias("dataSource") List<ObjectNode> dataSources,
-      @JsonProperty("interfaceConfigPath") @JsonAlias("interfaceConfigPaths")
-          List<String> interfaceConfigPath) {
+          @JsonProperty("serverPort") int serverPort,
+          @JsonProperty("dataSources") @JsonAlias("dataSource") List<ObjectNode> dataSources,
+          @JsonProperty("interfaceDefinitionPath") @JsonAlias("interfaceDefinitionPaths")
+                  List<String> interfaceDefinitionPath) {
     this.serverPort = serverPort;
     this.dataSources = dataSources;
-    this.interfaceConfigPath = interfaceConfigPath;
+    this.interfaceDefinitionPath = interfaceDefinitionPath;
   }
 
   public void validate() {
     Preconditions.checkArgument(
-        serverPort > 0 && serverPort <= 65535, "illegal serverPort: %s", serverPort);
+            serverPort > 0 && serverPort <= 65535, "illegal serverPort: %s", serverPort);
     Preconditions.checkArgument(
-        dataSources != null && !dataSources.isEmpty(), "empty dataSources!");
+            dataSources != null && !dataSources.isEmpty(), "empty dataSources!");
     for (ObjectNode objectNode : dataSources) {
       Preconditions.checkArgument(
-          objectNode.hasNonNull("id"), "`id` is required in dataSource: %s", objectNode);
+              objectNode.hasNonNull("id"), "`id` is required in dataSource: %s", objectNode);
     }
     Preconditions.checkArgument(
-        interfaceConfigPath != null && !interfaceConfigPath.isEmpty(),
-        "empty interfaceConfigPath!");
+            interfaceDefinitionPath != null && !interfaceDefinitionPath.isEmpty(),
+            "empty interfaceDefinitionPath!");
   }
 }

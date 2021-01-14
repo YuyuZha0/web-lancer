@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.CaseFormat;
 import com.google.common.base.Preconditions;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +16,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import javax.sql.DataSource;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -22,6 +25,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
@@ -30,13 +36,19 @@ import java.util.regex.Pattern;
  * @since 2021-01-11
  */
 @Slf4j
-public final class DataSourceRegistry implements Function<String, DataSource> {
+public final class DataSourceRegistry implements Function<String, DataSource>, AutoCloseable {
 
   private static final Pattern DATA_SOURCE_ID_PATTERN = Pattern.compile("[A-Za-z0-9_\\-]+");
+  private static final int DEFAULT_MAX_POOL_SIZE = 3;
 
+  private final AtomicBoolean closed = new AtomicBoolean(false);
   private final Map<Pair<String, Class<?>>, Method> setterMap = new HashMap<>();
   private final ConcurrentMap<String, HikariConfig> configMap = new ConcurrentHashMap<>();
-  private final ConcurrentMap<String, DataSource> dataSourceMap = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, HikariDataSource> dataSourceMap = new ConcurrentHashMap<>();
+  private final ScheduledExecutorService poolScheduler = new ScheduledThreadPoolExecutor(
+          Math.min(3, Runtime.getRuntime().availableProcessors()),
+          new ThreadFactoryBuilder().setDaemon(true).setNameFormat("hikari-cp-pool-scheduler-%d").build()
+  );
 
   {
     initializeSetterMap();
@@ -44,11 +56,16 @@ public final class DataSourceRegistry implements Function<String, DataSource> {
 
   @Override
   public DataSource apply(String s) {
+    checkNotClosed();
     checkDataSourceId(s);
     HikariConfig config = configMap.get(s);
     Preconditions.checkArgument(
-        config != null, "No dataSource with id `%s` has been registered!", s);
+            config != null, "No dataSource with id `%s` has been registered!", s);
     return dataSourceMap.computeIfAbsent(s, key -> new HikariDataSource(config));
+  }
+
+  private void checkNotClosed() {
+    Preconditions.checkArgument(!closed.get(), "DataSourceRegistry already closed!");
   }
 
   private void initializeSetterMap() {
@@ -78,20 +95,22 @@ public final class DataSourceRegistry implements Function<String, DataSource> {
       }
       if (long.class.isAssignableFrom(parameterTypes[0])
           || Long.class.isAssignableFrom(parameterTypes[0])) {
-        setterMap.put(Pair.of(method.getName(), int.class), method);
+        setterMap.put(Pair.of(method.getName(), long.class), method);
       }
       if (boolean.class.isAssignableFrom(parameterTypes[0])
           || Boolean.class.isAssignableFrom(parameterTypes[0])) {
-        setterMap.put(Pair.of(method.getName(), int.class), method);
+        setterMap.put(Pair.of(method.getName(), boolean.class), method);
       }
     }
-    log.debug("[{}] setter found in {}: {}", setterMap.entrySet(), klass, setterMap.keySet());
+    log.debug("[{}] setter(s) found in {}", setterMap.size(), klass);
   }
 
   public void registerDataSourceConfig(String id, ObjectNode config) {
+    checkNotClosed();
     checkDataSourceId(id);
     Preconditions.checkArgument(config != null && !config.isEmpty(), "illegal config");
     HikariConfig hikariConfig = new HikariConfig();
+    hikariConfig.setMaximumPoolSize(DEFAULT_MAX_POOL_SIZE);
     final Iterator<Map.Entry<String, JsonNode>> fields = config.fields();
     while (fields.hasNext()) {
       Map.Entry<String, JsonNode> entry = fields.next();
@@ -100,6 +119,7 @@ public final class DataSourceRegistry implements Function<String, DataSource> {
         continue;
       }
       if (trySet(hikariConfig, entry.getKey(), value)) {
+        log.debug("HikariCP config `{}` applied successfully!", entry.getKey());
         continue;
       }
       String textValue = value.asText().trim();
@@ -107,6 +127,7 @@ public final class DataSourceRegistry implements Function<String, DataSource> {
         hikariConfig.addDataSourceProperty(entry.getKey(), textValue);
       }
     }
+    hikariConfig.setScheduledExecutor(poolScheduler);
     configMap.put(id, hikariConfig);
   }
 
@@ -143,8 +164,25 @@ public final class DataSourceRegistry implements Function<String, DataSource> {
 
   private void checkDataSourceId(String s) {
     Preconditions.checkArgument(
-        StringUtils.isNotEmpty(s) && DATA_SOURCE_ID_PATTERN.matcher(s).matches(),
-        "illegal dataSourceId: %s",
-        s);
+            StringUtils.isNotEmpty(s) && DATA_SOURCE_ID_PATTERN.matcher(s).matches(),
+            "illegal dataSourceId: %s",
+            s);
+  }
+
+  @Override
+  public void close() {
+    if (!closed.compareAndSet(false, true)) {
+      return;
+    }
+    List<String> dataSourceIdList = new ArrayList<>(dataSourceMap.keySet());
+    for (String dataSourceId : dataSourceIdList) {
+      HikariDataSource dataSource = dataSourceMap.remove(dataSourceId);
+      if (dataSource != null) {
+        dataSource.close();
+        log.info("DataSource[{}] closed.", dataSourceId);
+      }
+    }
+    //noinspection UnstableApiUsage
+    MoreExecutors.shutdownAndAwaitTermination(poolScheduler, Duration.ofSeconds(2));
   }
 }

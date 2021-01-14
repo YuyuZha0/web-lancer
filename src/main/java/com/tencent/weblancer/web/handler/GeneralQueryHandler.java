@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.networknt.schema.JsonSchema;
 import com.networknt.schema.ValidationMessage;
@@ -47,12 +48,12 @@ public final class GeneralQueryHandler implements Handler<RoutingContext> {
   private final ObjectMapper objectMapper;
 
   public GeneralQueryHandler(
-      @NonNull LinkedHashSet<ParameterScope> parameterScopes,
-      JsonSchema parameterValidation,
-      @NonNull SqlSessionFactory sqlSessionFactory,
-      @NonNull String stmtId,
-      boolean unwrapArray,
-      @NonNull ObjectMapper objectMapper) {
+          @NonNull LinkedHashSet<ParameterScope> parameterScopes,
+          JsonSchema parameterValidation,
+          @NonNull SqlSessionFactory sqlSessionFactory,
+          @NonNull String stmtId,
+          boolean unwrapArray,
+          @NonNull ObjectMapper objectMapper) {
     this.parameterScopes = parameterScopes;
     this.parameterValidation = parameterValidation;
     this.sqlSessionFactory = sqlSessionFactory;
@@ -97,7 +98,7 @@ public final class GeneralQueryHandler implements Handler<RoutingContext> {
       params = resolveParameters(routingContext);
     } catch (Exception e) {
       ObjectNode resultWrapper =
-          QueryResult.PARAMETER_RESOLVE_FAIL.createResultObject(objectMapper).put("cause", e.getMessage());
+              QueryResult.PARAMETER_RESOLVE_FAIL.createResultObject(objectMapper).put("cause", e.getMessage());
       endWithJson(routingContext, resultWrapper);
       return;
     }
@@ -111,28 +112,29 @@ public final class GeneralQueryHandler implements Handler<RoutingContext> {
           resultWrapper.withArray("details").add(validationMessage.getMessage());
         }
         endWithJson(routingContext, resultWrapper);
+        return;
       }
     }
 
     routingContext
-        .vertx()
-        .executeBlocking(
-            promise -> {
-              ObjectNode resultWrapper;
-              try (SqlSession sqlSession = sqlSessionFactory.openSession()) {
-                ArrayNodeHandler handler = new ArrayNodeHandler(objectMapper.createArrayNode());
-                sqlSession.select(stmtId, params, handler);
-                ArrayNode arrayNode = handler.getArrayNode();
-                resultWrapper = wrapDbResult(arrayNode);
-              } catch (Exception e) {
-                log.error("Access DB with exception: ", e);
-                resultWrapper = QueryResult.UNKNOWN_EXCEPTION.createResultObject(objectMapper);
-                resultWrapper.put("cause", Throwables.getRootCause(e).getMessage());
-              }
-              endWithJson(routingContext, resultWrapper);
-              promise.complete();
-            },
-            false);
+            .vertx()
+            .executeBlocking(
+                    promise -> {
+                      ObjectNode resultWrapper;
+                      try (SqlSession sqlSession = sqlSessionFactory.openSession()) {
+                        ArrayNodeHandler handler = new ArrayNodeHandler(objectMapper.createArrayNode());
+                        sqlSession.select(stmtId, params, handler);
+                        ArrayNode arrayNode = handler.getArrayNode();
+                        resultWrapper = wrapDbResult(arrayNode);
+                      } catch (Exception e) {
+                        log.error("Access DB with exception: ", e);
+                        resultWrapper = QueryResult.UNKNOWN_EXCEPTION.createResultObject(objectMapper);
+                        resultWrapper.put("cause", Throwables.getRootCause(e).getMessage());
+                      }
+                      endWithJson(routingContext, resultWrapper);
+                      promise.complete();
+                    },
+                    false);
   }
 
   private ObjectNode wrapDbResult(ArrayNode arrayNode) {
@@ -156,10 +158,10 @@ public final class GeneralQueryHandler implements Handler<RoutingContext> {
       throw new RuntimeException(e);
     }
     context
-        .response()
-        .setStatusCode(200)
-        .putHeader("content-type", "application/json;charset=utf-8")
-        .end(buffer);
+            .response()
+            .setStatusCode(200)
+            .putHeader("content-type", "application/json;charset=utf-8")
+            .end(buffer);
   }
 
   private ObjectNode resolveParameters(RoutingContext context) throws IOException {
@@ -175,11 +177,9 @@ public final class GeneralQueryHandler implements Handler<RoutingContext> {
         }
         try (InputStream in = new ByteBufInputStream(buffer.getByteBuf())) {
           JsonNode bodyNode = objectMapper.readTree(in);
-          if (bodyNode.isObject()) {
-            parameters.setAll(((ObjectNode) bodyNode));
-          } else {
-            throw new IllegalArgumentException("body is excepted to be a json object!");
-          }
+          Preconditions.checkArgument(bodyNode.isObject(), "body is excepted to be a json object!");
+          parameters.setAll(((ObjectNode) bodyNode));
+
         }
       }
     }
@@ -189,7 +189,8 @@ public final class GeneralQueryHandler implements Handler<RoutingContext> {
   @RequiredArgsConstructor
   private static final class ArrayNodeHandler implements ResultHandler<JsonNode> {
 
-    @Getter private final ArrayNode arrayNode;
+    @Getter
+    private final ArrayNode arrayNode;
 
     @Override
     public void handleResult(ResultContext<? extends JsonNode> resultContext) {

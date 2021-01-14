@@ -9,7 +9,7 @@
       "id": "default"
     }
   ],
-  "interfaceConfigPath": [
+  "interfaceDefinitionPath": [
     "/Users/fishzhao/IdeaProjects/web-lancer/conf/interface.json"
   ]
 }

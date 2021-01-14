@@ -12,7 +12,7 @@ import java.util.Set;
  * @author fishzhao
  * @since 2021-01-11
  */
-public interface DynamicInterfaceConfig {
+public interface DynamicInterfaceDefinition {
 
   String getDataSourceId();
 

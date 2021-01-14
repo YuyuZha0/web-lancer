@@ -13,6 +13,7 @@ import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 import org.apache.ibatis.transaction.jdbc.JdbcTransactionFactory;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.sql.DataSource;
@@ -26,6 +27,7 @@ import java.util.Collections;
 public class JacksonTypeHandlerTest {
 
   @Test
+  @Ignore
   public void test() {
     DataSource dataSource =
         new UnpooledDataSource(

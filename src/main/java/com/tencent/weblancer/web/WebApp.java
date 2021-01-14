@@ -1,12 +1,13 @@
 package com.tencent.weblancer.web;
 
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.json.JsonReadFeature;
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Preconditions;
 import com.tencent.weblancer.web.conf.AppMetaConfig;
-import com.tencent.weblancer.web.conf.DynamicInterfaceConfig;
-import com.tencent.weblancer.web.conf.JsonInterfaceConfig;
+import com.tencent.weblancer.web.conf.DynamicInterfaceDefinition;
+import com.tencent.weblancer.web.conf.JsonInterfaceDefinition;
 import com.tencent.weblancer.web.repo.DataSourceRegistry;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
@@ -14,6 +15,7 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,11 +40,13 @@ public final class WebApp implements AutoCloseable {
 
   public static void main(String[] args) throws Exception {
 
+    Preconditions.checkArgument(args != null && StringUtils.isNotBlank(args[0]), "config file path is required at args[0]!");
+
     ObjectMapper configMapper =
-        new ObjectMapper()
-            .enable(MapperFeature.ALLOW_COERCION_OF_SCALARS)
-            .enable(JsonParser.Feature.ALLOW_COMMENTS)
-            .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
+            new ObjectMapper()
+                    .enable(JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS.mappedFeature())
+                    .enable(JsonParser.Feature.ALLOW_COMMENTS)
+                    .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
 
     AppMetaConfig metaConfig;
     try (InputStream in = Files.newInputStream(Paths.get(args[0]), StandardOpenOption.READ)) {
@@ -56,13 +60,13 @@ public final class WebApp implements AutoCloseable {
     metaConfig.validate();
     DataSourceRegistry dataSourceRegistry = new DataSourceRegistry();
     metaConfig
-        .getDataSources()
-        .forEach(
-            objectNode ->
-                dataSourceRegistry.registerDataSourceConfig(
-                    objectNode.remove("id").asText(), objectNode));
-    List<DynamicInterfaceConfig> dynamicInterfaceConfigs = new ArrayList<>();
-    for (String strPath : metaConfig.getInterfaceConfigPath()) {
+            .getDataSources()
+            .forEach(
+                    objectNode ->
+                            dataSourceRegistry.registerDataSourceConfig(
+                                    objectNode.remove("id").asText(), objectNode));
+    List<DynamicInterfaceDefinition> dynamicInterfaceDefinitions = new ArrayList<>();
+    for (String strPath : metaConfig.getInterfaceDefinitionPath()) {
       Path path = Paths.get(strPath);
       if (!Files.isReadable(path)) {
         log.warn("Path [{}] is not readable ank will be skipped!", path);
@@ -70,56 +74,57 @@ public final class WebApp implements AutoCloseable {
       }
       if (Files.isDirectory(path)) {
         Files.walk(path)
-            .filter(Files::isReadable)
-            .forEach(p -> addInterfaceConfig(dynamicInterfaceConfigs, p));
+                .filter(Files::isReadable)
+                .forEach(p -> addInterfaceDefinition(dynamicInterfaceDefinitions, p));
       } else {
-        addInterfaceConfig(dynamicInterfaceConfigs, path);
+        addInterfaceDefinition(dynamicInterfaceDefinitions, path);
       }
     }
-    log.info("[{}] interface(s) detected.", dynamicInterfaceConfigs.size());
+    log.info("[{}] interface(s) detected.", dynamicInterfaceDefinitions.size());
 
     Vertx vertx = Vertx.vertx(new VertxOptions().setPreferNativeTransport(true));
     HttpRequestHandlerBuilder httpRequestHandlerBuilder =
-        new HttpRequestHandlerBuilder(vertx, dataSourceRegistry, dynamicInterfaceConfigs);
+            new HttpRequestHandlerBuilder(vertx, dataSourceRegistry, dynamicInterfaceDefinitions);
 
     HttpServer httpServer =
-        vertx.createHttpServer(
-            new HttpServerOptions().setTcpFastOpen(true).setTcpNoDelay(true).setTcpQuickAck(true));
+            vertx.createHttpServer(
+                    new HttpServerOptions().setTcpFastOpen(true).setTcpNoDelay(true).setTcpQuickAck(true));
 
     httpServer
-        .requestHandler(httpRequestHandlerBuilder.get())
-        .listen(metaConfig.getServerPort())
-        .onSuccess(
-            s -> log.info("Start httpServer successfully listening on port: {}", s.actualPort()));
+            .requestHandler(httpRequestHandlerBuilder.get())
+            .listen(metaConfig.getServerPort())
+            .onSuccess(
+                    s -> log.info("Start httpServer successfully listening on port: {}", s.actualPort()));
 
     Runtime.getRuntime()
-        .addShutdownHook(
-            Executors.defaultThreadFactory()
-                .newThread(
-                    () ->
-                        httpServer
-                            .close()
-                            .onSuccess(
-                                v -> {
-                                  log.info("HttpServer shutdown successfully!");
-                                  vertx.close();
-                                })));
+            .addShutdownHook(
+                    Executors.defaultThreadFactory()
+                            .newThread(
+                                    () ->
+                                            httpServer
+                                                    .close()
+                                                    .onSuccess(
+                                                            v -> {
+                                                              log.info("HttpServer shutdown successfully!");
+                                                              vertx.close();
+                                                              dataSourceRegistry.close();
+                                                            })));
   }
 
-  private void addInterfaceConfig(List<DynamicInterfaceConfig> dynamicInterfaceConfigs, Path path) {
+  private void addInterfaceDefinition(List<DynamicInterfaceDefinition> dynamicInterfaceDefinitions, Path path) {
     try (InputStream in = Files.newInputStream(path, StandardOpenOption.READ)) {
-      List<JsonInterfaceConfig> jsonInterfaceConfigList =
-          configMapper.readValue(
-              in,
-              configMapper
-                  .getTypeFactory()
-                  .constructCollectionType(ArrayList.class, JsonInterfaceConfig.class));
-      if (jsonInterfaceConfigList != null && !jsonInterfaceConfigList.isEmpty()) {
+      List<JsonInterfaceDefinition> jsonInterfaceDefinitions =
+              configMapper.readValue(
+                      in,
+                      configMapper
+                              .getTypeFactory()
+                              .constructCollectionType(ArrayList.class, JsonInterfaceDefinition.class));
+      if (jsonInterfaceDefinitions != null && !jsonInterfaceDefinitions.isEmpty()) {
         log.info(
-            "Found [{}] interface config item(s) in file: {}",
-            jsonInterfaceConfigList.size(),
-            path);
-        dynamicInterfaceConfigs.addAll(jsonInterfaceConfigList);
+                "Found [{}] interface config item(s) in file: {}",
+                jsonInterfaceDefinitions.size(),
+                path);
+        dynamicInterfaceDefinitions.addAll(jsonInterfaceDefinitions);
       }
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -127,5 +132,6 @@ public final class WebApp implements AutoCloseable {
   }
 
   @Override
-  public void close() {}
+  public void close() {
+  }
 }
