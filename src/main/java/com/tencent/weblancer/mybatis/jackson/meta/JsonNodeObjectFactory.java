@@ -23,13 +23,13 @@ public final class JsonNodeObjectFactory extends DefaultObjectFactory {
 
   private final Properties properties = new Properties();
   private final Set<Class<? extends TreeNode>> jsonTypes =
-          new HashSet<>(
-                  Arrays.asList(
-                          TreeNode.class,
-                          JsonNode.class,
-                          ContainerNode.class,
-                          ArrayNode.class,
-                          ObjectNode.class));
+      new HashSet<>(
+          Arrays.asList(
+              TreeNode.class,
+              JsonNode.class,
+              ContainerNode.class,
+              ArrayNode.class,
+              ObjectNode.class));
   private final JsonNodeFactory jsonNodeFactory;
 
   public JsonNodeObjectFactory(ObjectMapper objectMapper) {
@@ -46,7 +46,7 @@ public final class JsonNodeObjectFactory extends DefaultObjectFactory {
   @SuppressWarnings("unchecked")
   @Override
   public <T> T create(
-          Class<T> type, List<Class<?>> constructorArgTypes, List<Object> constructorArgs) {
+      Class<T> type, List<Class<?>> constructorArgTypes, List<Object> constructorArgs) {
     if (jsonTypes.contains(type) && (constructorArgTypes == null || constructorArgs == null)) {
       if (type == ArrayNode.class) {
         // a dirty solution

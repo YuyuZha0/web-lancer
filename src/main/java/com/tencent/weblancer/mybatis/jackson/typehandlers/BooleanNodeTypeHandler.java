@@ -16,9 +16,9 @@ import java.sql.SQLException;
 @MappedJdbcTypes({JdbcType.BIT, JdbcType.BOOLEAN})
 public final class BooleanNodeTypeHandler extends BaseJacksonTypeHandler<BooleanNode> {
 
-
   @Override
-  void setNonNullParameter(PreparedStatement ps, int i, BooleanNode parameter, JdbcType jdbcType) throws SQLException {
+  void setNonNullParameter(PreparedStatement ps, int i, BooleanNode parameter, JdbcType jdbcType)
+      throws SQLException {
     ps.setBoolean(i, parameter.asBoolean());
   }
 

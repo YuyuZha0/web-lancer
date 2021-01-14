@@ -107,7 +107,7 @@ public final class JacksonBindingConfiguration extends Configuration {
     // dirty solution for arrayNode result handle problem
     if (ArrayNode.class.isAssignableFrom(rm.getType())) {
       rm =
-              new ResultMap.Builder(this, rm.getId(), ObjectNode.class, rm.getResultMappings()).build();
+          new ResultMap.Builder(this, rm.getId(), ObjectNode.class, rm.getResultMappings()).build();
     }
     super.addResultMap(rm);
   }

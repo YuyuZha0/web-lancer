@@ -24,10 +24,10 @@ public final class AppMetaConfig {
 
   @JsonCreator
   public AppMetaConfig(
-          @JsonProperty("serverPort") int serverPort,
-          @JsonProperty("dataSources") @JsonAlias("dataSource") List<ObjectNode> dataSources,
-          @JsonProperty("interfaceDefinitionPath") @JsonAlias("interfaceDefinitionPaths")
-                  List<String> interfaceDefinitionPath) {
+      @JsonProperty("serverPort") int serverPort,
+      @JsonProperty("dataSources") @JsonAlias("dataSource") List<ObjectNode> dataSources,
+      @JsonProperty("interfaceDefinitionPath") @JsonAlias("interfaceDefinitionPaths")
+          List<String> interfaceDefinitionPath) {
     this.serverPort = serverPort;
     this.dataSources = dataSources;
     this.interfaceDefinitionPath = interfaceDefinitionPath;
@@ -35,15 +35,15 @@ public final class AppMetaConfig {
 
   public void validate() {
     Preconditions.checkArgument(
-            serverPort > 0 && serverPort <= 65535, "illegal serverPort: %s", serverPort);
+        serverPort > 0 && serverPort <= 65535, "illegal serverPort: %s", serverPort);
     Preconditions.checkArgument(
-            dataSources != null && !dataSources.isEmpty(), "empty dataSources!");
+        dataSources != null && !dataSources.isEmpty(), "empty dataSources!");
     for (ObjectNode objectNode : dataSources) {
       Preconditions.checkArgument(
-              objectNode.hasNonNull("id"), "`id` is required in dataSource: %s", objectNode);
+          objectNode.hasNonNull("id"), "`id` is required in dataSource: %s", objectNode);
     }
     Preconditions.checkArgument(
-            interfaceDefinitionPath != null && !interfaceDefinitionPath.isEmpty(),
-            "empty interfaceDefinitionPath!");
+        interfaceDefinitionPath != null && !interfaceDefinitionPath.isEmpty(),
+        "empty interfaceDefinitionPath!");
   }
 }

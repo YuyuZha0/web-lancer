@@ -17,7 +17,8 @@ import java.sql.SQLException;
 public final class IntNodeTypeHandler extends BaseJacksonTypeHandler<IntNode> {
 
   @Override
-  void setNonNullParameter(PreparedStatement ps, int i, IntNode parameter, JdbcType jdbcType) throws SQLException {
+  void setNonNullParameter(PreparedStatement ps, int i, IntNode parameter, JdbcType jdbcType)
+      throws SQLException {
     ps.setInt(i, parameter.asInt());
   }
 
@@ -38,5 +39,4 @@ public final class IntNodeTypeHandler extends BaseJacksonTypeHandler<IntNode> {
     int result = cs.getInt(columnIndex);
     return result == 0 && cs.wasNull() ? null : IntNode.valueOf(result);
   }
-
 }

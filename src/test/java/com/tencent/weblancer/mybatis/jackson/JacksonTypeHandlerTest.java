@@ -38,16 +38,22 @@ public class JacksonTypeHandlerTest {
     Environment environment = new Environment("test", new JdbcTransactionFactory(), dataSource);
     JacksonBindingConfiguration configuration = new JacksonBindingConfiguration();
     configuration.setEnvironment(environment);
-    //configuration.addMapper(StudentMapper.class);
+    // configuration.addMapper(StudentMapper.class);
     configuration.addMappedStatement(
         new MappedStatement.Builder(
                 configuration,
                 "1",
-                configuration.getLanguageDriver(null).createSqlSource(configuration,"select name from t_student where id=#{id}  or id=2", ObjectNode.class),
+                configuration
+                    .getLanguageDriver(null)
+                    .createSqlSource(
+                        configuration,
+                        "select name from t_student where id=#{id}  or id=2",
+                        ObjectNode.class),
                 SqlCommandType.SELECT)
             .statementType(StatementType.PREPARED)
-            //.resultSetType(ResultSetType.DEFAULT)
-               // .parameterMap(new ParameterMap.Builder(configuration,"1",ObjectNode.class, new ArrayList<>()).build())
+            // .resultSetType(ResultSetType.DEFAULT)
+            // .parameterMap(new ParameterMap.Builder(configuration,"1",ObjectNode.class, new
+            // ArrayList<>()).build())
             .resultMaps(
                 Collections.singletonList(
                     new ResultMap.Builder(configuration, "1", ObjectNode.class, new ArrayList<>())
@@ -58,11 +64,11 @@ public class JacksonTypeHandlerTest {
     try (SqlSession sqlSession = sqlSessionFactory.openSession()) {
       sqlSession.select(
           "1",
-          configuration.getObjectMapper().createObjectNode().put("id",1),
+          configuration.getObjectMapper().createObjectNode().put("id", 1),
           new ResultHandler() {
             @Override
             public void handleResult(ResultContext resultContext) {
-              //System.out.println(resultContext.getResultCount());
+              // System.out.println(resultContext.getResultCount());
               System.out.println(resultContext.getResultObject().getClass());
             }
           });

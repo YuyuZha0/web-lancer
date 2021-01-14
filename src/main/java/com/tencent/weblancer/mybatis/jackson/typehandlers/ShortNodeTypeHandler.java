@@ -16,9 +16,9 @@ import java.sql.SQLException;
 @MappedJdbcTypes({JdbcType.TINYINT, JdbcType.SMALLINT})
 public final class ShortNodeTypeHandler extends BaseJacksonTypeHandler<ShortNode> {
 
-
   @Override
-  void setNonNullParameter(PreparedStatement ps, int i, ShortNode parameter, JdbcType jdbcType) throws SQLException {
+  void setNonNullParameter(PreparedStatement ps, int i, ShortNode parameter, JdbcType jdbcType)
+      throws SQLException {
     if (jdbcType == JdbcType.SMALLINT) {
       ps.setShort(i, (short) parameter.asInt());
     } else {
@@ -43,5 +43,4 @@ public final class ShortNodeTypeHandler extends BaseJacksonTypeHandler<ShortNode
     short result = cs.getShort(columnIndex);
     return result == 0 && cs.wasNull() ? null : ShortNode.valueOf(result);
   }
-
 }

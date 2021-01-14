@@ -45,10 +45,13 @@ public final class DataSourceRegistry implements Function<String, DataSource>, A
   private final Map<Pair<String, Class<?>>, Method> setterMap = new HashMap<>();
   private final ConcurrentMap<String, HikariConfig> configMap = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, HikariDataSource> dataSourceMap = new ConcurrentHashMap<>();
-  private final ScheduledExecutorService poolScheduler = new ScheduledThreadPoolExecutor(
+  private final ScheduledExecutorService poolScheduler =
+      new ScheduledThreadPoolExecutor(
           Math.min(3, Runtime.getRuntime().availableProcessors()),
-          new ThreadFactoryBuilder().setDaemon(true).setNameFormat("hikari-cp-pool-scheduler-%d").build()
-  );
+          new ThreadFactoryBuilder()
+              .setDaemon(true)
+              .setNameFormat("hikari-cp-pool-scheduler-%d")
+              .build());
 
   {
     initializeSetterMap();
@@ -60,7 +63,7 @@ public final class DataSourceRegistry implements Function<String, DataSource>, A
     checkDataSourceId(s);
     HikariConfig config = configMap.get(s);
     Preconditions.checkArgument(
-            config != null, "No dataSource with id `%s` has been registered!", s);
+        config != null, "No dataSource with id `%s` has been registered!", s);
     return dataSourceMap.computeIfAbsent(s, key -> new HikariDataSource(config));
   }
 
@@ -153,7 +156,7 @@ public final class DataSourceRegistry implements Function<String, DataSource>, A
         return true;
       }
       if ((method = setterMap.get(Pair.of(setterName, boolean.class))) != null) {
-        method.invoke(config, value.asLong());
+        method.invoke(config, value.asBoolean());
         return true;
       }
     } catch (Exception e) {
@@ -164,9 +167,9 @@ public final class DataSourceRegistry implements Function<String, DataSource>, A
 
   private void checkDataSourceId(String s) {
     Preconditions.checkArgument(
-            StringUtils.isNotEmpty(s) && DATA_SOURCE_ID_PATTERN.matcher(s).matches(),
-            "illegal dataSourceId: %s",
-            s);
+        StringUtils.isNotEmpty(s) && DATA_SOURCE_ID_PATTERN.matcher(s).matches(),
+        "illegal dataSourceId: %s",
+        s);
   }
 
   @Override

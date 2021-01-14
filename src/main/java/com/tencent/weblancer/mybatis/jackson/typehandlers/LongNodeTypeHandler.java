@@ -16,9 +16,9 @@ import java.sql.SQLException;
 @MappedJdbcTypes(JdbcType.BIGINT)
 public final class LongNodeTypeHandler extends BaseJacksonTypeHandler<LongNode> {
 
-
   @Override
-  void setNonNullParameter(PreparedStatement ps, int i, LongNode parameter, JdbcType jdbcType) throws SQLException {
+  void setNonNullParameter(PreparedStatement ps, int i, LongNode parameter, JdbcType jdbcType)
+      throws SQLException {
     ps.setLong(i, parameter.asLong());
   }
 
@@ -39,5 +39,4 @@ public final class LongNodeTypeHandler extends BaseJacksonTypeHandler<LongNode> 
     long result = cs.getLong(columnIndex);
     return result == 0 && cs.wasNull() ? null : LongNode.valueOf(result);
   }
-
 }

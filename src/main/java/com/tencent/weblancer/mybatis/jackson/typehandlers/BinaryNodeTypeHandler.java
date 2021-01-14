@@ -16,13 +16,13 @@ import java.sql.SQLException;
 @MappedJdbcTypes({JdbcType.BLOB, JdbcType.LONGVARBINARY})
 public final class BinaryNodeTypeHandler extends BaseJacksonTypeHandler<BinaryNode> {
 
-
   private BinaryNode bytesNodeOrNull(byte[] bytes) {
     return BinaryNode.valueOf(bytes);
   }
 
   @Override
-  void setNonNullParameter(PreparedStatement ps, int i, BinaryNode parameter, JdbcType jdbcType) throws SQLException {
+  void setNonNullParameter(PreparedStatement ps, int i, BinaryNode parameter, JdbcType jdbcType)
+      throws SQLException {
     byte[] bytes = parameter.binaryValue();
     ps.setBytes(i, bytes);
   }

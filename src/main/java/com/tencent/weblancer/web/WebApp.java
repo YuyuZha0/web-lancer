@@ -40,13 +40,15 @@ public final class WebApp {
 
   public static void main(String[] args) throws Exception {
 
-    Preconditions.checkArgument(args != null && StringUtils.isNotBlank(args[0]), "config file path is required at args[0]!");
+    Preconditions.checkArgument(
+        args != null && StringUtils.isNotBlank(args[0]),
+        "config file path is required at args[0]!");
 
     ObjectMapper configMapper =
-            new ObjectMapper()
-                    .enable(JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS.mappedFeature())
-                    .enable(JsonParser.Feature.ALLOW_COMMENTS)
-                    .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
+        new ObjectMapper()
+            .enable(JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS.mappedFeature())
+            .enable(JsonParser.Feature.ALLOW_COMMENTS)
+            .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
 
     AppMetaConfig metaConfig;
     try (InputStream in = Files.newInputStream(Paths.get(args[0]), StandardOpenOption.READ)) {
@@ -60,11 +62,11 @@ public final class WebApp {
     metaConfig.validate();
     DataSourceRegistry dataSourceRegistry = new DataSourceRegistry();
     metaConfig
-            .getDataSources()
-            .forEach(
-                    objectNode ->
-                            dataSourceRegistry.registerDataSourceConfig(
-                                    objectNode.remove("id").asText(), objectNode));
+        .getDataSources()
+        .forEach(
+            objectNode ->
+                dataSourceRegistry.registerDataSourceConfig(
+                    objectNode.remove("id").asText(), objectNode));
     List<DynamicInterfaceDefinition> dynamicInterfaceDefinitions = new ArrayList<>();
     for (String strPath : metaConfig.getInterfaceDefinitionPath()) {
       Path path = Paths.get(strPath);
@@ -74,8 +76,8 @@ public final class WebApp {
       }
       if (Files.isDirectory(path)) {
         Files.walk(path)
-                .filter(Files::isReadable)
-                .forEach(p -> addInterfaceDefinition(dynamicInterfaceDefinitions, p));
+            .filter(Files::isReadable)
+            .forEach(p -> addInterfaceDefinition(dynamicInterfaceDefinitions, p));
       } else {
         addInterfaceDefinition(dynamicInterfaceDefinitions, path);
       }
@@ -84,51 +86,51 @@ public final class WebApp {
 
     Vertx vertx = Vertx.vertx(new VertxOptions().setPreferNativeTransport(true));
     HttpRequestHandlerBuilder httpRequestHandlerBuilder =
-            new HttpRequestHandlerBuilder(vertx, dataSourceRegistry, dynamicInterfaceDefinitions);
+        new HttpRequestHandlerBuilder(vertx, dataSourceRegistry, dynamicInterfaceDefinitions);
 
     HttpServer httpServer =
-            vertx.createHttpServer(
-                    new HttpServerOptions().setTcpFastOpen(true).setTcpNoDelay(true).setTcpQuickAck(true));
+        vertx.createHttpServer(
+            new HttpServerOptions().setTcpFastOpen(true).setTcpNoDelay(true).setTcpQuickAck(true));
 
     httpServer
-            .requestHandler(httpRequestHandlerBuilder.get())
-            .listen(metaConfig.getServerPort())
-            .onSuccess(
-                    s -> log.info("Start httpServer successfully listening on port: {}", s.actualPort()));
+        .requestHandler(httpRequestHandlerBuilder.get())
+        .listen(metaConfig.getServerPort())
+        .onSuccess(
+            s -> log.info("Start httpServer successfully listening on port: {}", s.actualPort()));
 
     Runtime.getRuntime()
-            .addShutdownHook(
-                    Executors.defaultThreadFactory()
-                            .newThread(
-                                    () ->
-                                            httpServer
-                                                    .close()
-                                                    .onSuccess(
-                                                            v -> {
-                                                              log.info("HttpServer shutdown successfully!");
-                                                              vertx.close();
-                                                              dataSourceRegistry.close();
-                                                            })));
+        .addShutdownHook(
+            Executors.defaultThreadFactory()
+                .newThread(
+                    () ->
+                        httpServer
+                            .close()
+                            .onSuccess(
+                                v -> {
+                                  log.info("HttpServer shutdown successfully!");
+                                  vertx.close();
+                                  dataSourceRegistry.close();
+                                })));
   }
 
-  private void addInterfaceDefinition(List<DynamicInterfaceDefinition> dynamicInterfaceDefinitions, Path path) {
+  private void addInterfaceDefinition(
+      List<DynamicInterfaceDefinition> dynamicInterfaceDefinitions, Path path) {
     try (InputStream in = Files.newInputStream(path, StandardOpenOption.READ)) {
       List<JsonInterfaceDefinition> jsonInterfaceDefinitions =
-              configMapper.readValue(
-                      in,
-                      configMapper
-                              .getTypeFactory()
-                              .constructCollectionType(ArrayList.class, JsonInterfaceDefinition.class));
+          configMapper.readValue(
+              in,
+              configMapper
+                  .getTypeFactory()
+                  .constructCollectionType(ArrayList.class, JsonInterfaceDefinition.class));
       if (jsonInterfaceDefinitions != null && !jsonInterfaceDefinitions.isEmpty()) {
         log.info(
-                "Found [{}] interface config item(s) in file: {}",
-                jsonInterfaceDefinitions.size(),
-                path);
+            "Found [{}] interface config item(s) in file: {}",
+            jsonInterfaceDefinitions.size(),
+            path);
         dynamicInterfaceDefinitions.addAll(jsonInterfaceDefinitions);
       }
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
-
 }

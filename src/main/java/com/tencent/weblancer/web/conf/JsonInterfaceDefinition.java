@@ -31,15 +31,15 @@ public final class JsonInterfaceDefinition implements DynamicInterfaceDefinition
 
   @JsonCreator
   public JsonInterfaceDefinition(
-          @JsonProperty("dataSourceId") String dataSourceId,
-          @JsonProperty("uri") String uri,
-          @JsonProperty("httpMethods") @JsonAlias("httpMethod") Set<HttpMethod> httpMethods,
-          @JsonProperty("parameterScopes") @JsonAlias("parameterScope")
-                  List<ParameterScope> parameterScopes,
-          @JsonProperty("sqlScriptsSegments") @JsonAlias({"sql", "sqlScripts"})
-                  List<String> sqlScriptsSegments,
-          @JsonProperty("unwrapArray") boolean unwrapArray,
-          @JsonProperty("parameterValidation") @JsonAlias("validation") JsonNode parameterValidation) {
+      @JsonProperty("dataSourceId") String dataSourceId,
+      @JsonProperty("uri") String uri,
+      @JsonProperty("httpMethods") @JsonAlias("httpMethod") Set<HttpMethod> httpMethods,
+      @JsonProperty("parameterScopes") @JsonAlias("parameterScope")
+          List<ParameterScope> parameterScopes,
+      @JsonProperty("sqlScriptsSegments") @JsonAlias({"sql", "sqlScripts"})
+          List<String> sqlScriptsSegments,
+      @JsonProperty("unwrapArray") boolean unwrapArray,
+      @JsonProperty("parameterValidation") @JsonAlias("validation") JsonNode parameterValidation) {
     this.dataSourceId = dataSourceId;
     this.uri = uri;
     this.httpMethods = httpMethods;

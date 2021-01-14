@@ -15,8 +15,7 @@ public class JsonNodeReflectorFactory implements ReflectorFactory {
   private final ConcurrentMap<Class<?>, Reflector> reflectorMap = new ConcurrentHashMap<>();
   private boolean classCacheEnabled = true;
 
-  public JsonNodeReflectorFactory() {
-  }
+  public JsonNodeReflectorFactory() {}
 
   @Override
   public boolean isClassCacheEnabled() {
@@ -37,5 +36,4 @@ public class JsonNodeReflectorFactory implements ReflectorFactory {
       return new JsonNodeReflector(type);
     }
   }
-
 }

@@ -16,9 +16,9 @@ import java.sql.SQLException;
 @MappedJdbcTypes(JdbcType.DOUBLE)
 public final class DoubleNodeTypeHandler extends BaseJacksonTypeHandler<DoubleNode> {
 
-
   @Override
-  void setNonNullParameter(PreparedStatement ps, int i, DoubleNode parameter, JdbcType jdbcType) throws SQLException {
+  void setNonNullParameter(PreparedStatement ps, int i, DoubleNode parameter, JdbcType jdbcType)
+      throws SQLException {
     ps.setDouble(i, parameter.asDouble());
   }
 
@@ -39,5 +39,4 @@ public final class DoubleNodeTypeHandler extends BaseJacksonTypeHandler<DoubleNo
     double result = cs.getDouble(columnIndex);
     return result == 0 && cs.wasNull() ? null : DoubleNode.valueOf(result);
   }
-
 }

@@ -16,9 +16,9 @@ import java.sql.SQLException;
 @MappedJdbcTypes(JdbcType.FLOAT)
 public final class FloatNodeTypeHandler extends BaseJacksonTypeHandler<FloatNode> {
 
-
   @Override
-  void setNonNullParameter(PreparedStatement ps, int i, FloatNode parameter, JdbcType jdbcType) throws SQLException {
+  void setNonNullParameter(PreparedStatement ps, int i, FloatNode parameter, JdbcType jdbcType)
+      throws SQLException {
     ps.setFloat(i, (float) parameter.asDouble());
   }
 
@@ -39,5 +39,4 @@ public final class FloatNodeTypeHandler extends BaseJacksonTypeHandler<FloatNode
     float result = cs.getFloat(columnIndex);
     return result == 0 && cs.wasNull() ? null : FloatNode.valueOf(result);
   }
-
 }

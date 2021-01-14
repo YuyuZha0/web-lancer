@@ -69,7 +69,8 @@ public final class ArrayNodeWrapper implements ObjectWrapper {
   }
 
   @Override
-  public MetaObject instantiatePropertyValue(String name, PropertyTokenizer prop, ObjectFactory objectFactory) {
+  public MetaObject instantiatePropertyValue(
+      String name, PropertyTokenizer prop, ObjectFactory objectFactory) {
     throw new UnsupportedOperationException();
   }
 

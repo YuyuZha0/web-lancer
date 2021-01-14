@@ -80,7 +80,8 @@ public final class ObjectNodeWrapper implements ObjectWrapper {
       ((ObjectNode) array).set(index, value);
       return;
     }
-    throw new IllegalArgumentException("illegal json type: " + array.getNodeType() + " for index " + index);
+    throw new IllegalArgumentException(
+        "illegal json type: " + array.getNodeType() + " for index " + index);
   }
 
   @Override
@@ -100,43 +101,43 @@ public final class ObjectNodeWrapper implements ObjectWrapper {
 
   @Override
   public Class<?> getSetterType(String name) {
-//    PropertyTokenizer prop = new PropertyTokenizer(name);
-//    if (prop.hasNext()) {
-//      MetaObject metaValue = metaObject.metaObjectForProperty(prop.getIndexedName());
-//      if (metaValue == SystemMetaObject.NULL_META_OBJECT) {
-//        return JsonNode.class;
-//      } else {
-//        return metaValue.getSetterType(prop.getChildren());
-//      }
-//    } else {
-//      JsonNode child = objectNode.get(name);
-//      if (child != null) {
-//        return child.getClass();
-//      } else {
-//        return JsonNode.class;
-//      }
-//    }
+    //    PropertyTokenizer prop = new PropertyTokenizer(name);
+    //    if (prop.hasNext()) {
+    //      MetaObject metaValue = metaObject.metaObjectForProperty(prop.getIndexedName());
+    //      if (metaValue == SystemMetaObject.NULL_META_OBJECT) {
+    //        return JsonNode.class;
+    //      } else {
+    //        return metaValue.getSetterType(prop.getChildren());
+    //      }
+    //    } else {
+    //      JsonNode child = objectNode.get(name);
+    //      if (child != null) {
+    //        return child.getClass();
+    //      } else {
+    //        return JsonNode.class;
+    //      }
+    //    }
     return JsonNode.class;
   }
 
   @Override
   public Class<?> getGetterType(String name) {
-//    PropertyTokenizer prop = new PropertyTokenizer(name);
-//    if (prop.hasNext()) {
-//      MetaObject metaValue = metaObject.metaObjectForProperty(prop.getIndexedName());
-//      if (metaValue == SystemMetaObject.NULL_META_OBJECT) {
-//        return JsonNode.class;
-//      } else {
-//        return metaValue.getGetterType(prop.getChildren());
-//      }
-//    } else {
-//      JsonNode child = objectNode.get(name);
-//      if (child != null) {
-//        return child.getClass();
-//      } else {
-//        return JsonNode.class;
-//      }
-//    }
+    //    PropertyTokenizer prop = new PropertyTokenizer(name);
+    //    if (prop.hasNext()) {
+    //      MetaObject metaValue = metaObject.metaObjectForProperty(prop.getIndexedName());
+    //      if (metaValue == SystemMetaObject.NULL_META_OBJECT) {
+    //        return JsonNode.class;
+    //      } else {
+    //        return metaValue.getGetterType(prop.getChildren());
+    //      }
+    //    } else {
+    //      JsonNode child = objectNode.get(name);
+    //      if (child != null) {
+    //        return child.getClass();
+    //      } else {
+    //        return JsonNode.class;
+    //      }
+    //    }
     return JsonNode.class;
   }
 
@@ -165,11 +166,15 @@ public final class ObjectNodeWrapper implements ObjectWrapper {
   }
 
   @Override
-  public MetaObject instantiatePropertyValue(String name, PropertyTokenizer prop, ObjectFactory objectFactory) {
+  public MetaObject instantiatePropertyValue(
+      String name, PropertyTokenizer prop, ObjectFactory objectFactory) {
     ObjectNode node = objectNode.objectNode();
     set(prop, node);
-    return MetaObject.forObject(node, metaObject.getObjectFactory(), metaObject.getObjectWrapperFactory(), metaObject.getReflectorFactory());
-
+    return MetaObject.forObject(
+        node,
+        metaObject.getObjectFactory(),
+        metaObject.getObjectWrapperFactory(),
+        metaObject.getReflectorFactory());
   }
 
   @Override

@@ -17,7 +17,6 @@ import java.sql.SQLException;
 @MappedJdbcTypes({JdbcType.REAL, JdbcType.DECIMAL, JdbcType.NUMERIC})
 public final class DecimalNodeTypeHandler extends BaseJacksonTypeHandler<DecimalNode> {
 
-
   private DecimalNode decimalNodeOrNull(BigDecimal decimal) {
     if (decimal != null) {
       return DecimalNode.valueOf(decimal);
@@ -26,7 +25,8 @@ public final class DecimalNodeTypeHandler extends BaseJacksonTypeHandler<Decimal
   }
 
   @Override
-  void setNonNullParameter(PreparedStatement ps, int i, DecimalNode parameter, JdbcType jdbcType) throws SQLException {
+  void setNonNullParameter(PreparedStatement ps, int i, DecimalNode parameter, JdbcType jdbcType)
+      throws SQLException {
     ps.setBigDecimal(i, new BigDecimal(parameter.asText()));
   }
 
@@ -44,5 +44,4 @@ public final class DecimalNodeTypeHandler extends BaseJacksonTypeHandler<Decimal
   DecimalNode getNullableResult(CallableStatement cs, int columnIndex) throws SQLException {
     return decimalNodeOrNull(cs.getBigDecimal(columnIndex));
   }
-
 }

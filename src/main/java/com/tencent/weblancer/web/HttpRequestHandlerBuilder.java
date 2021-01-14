@@ -56,16 +56,16 @@ public final class HttpRequestHandlerBuilder implements Supplier<Handler<HttpSer
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   public HttpRequestHandlerBuilder(
-          @NonNull Vertx vertx,
-          @NonNull DataSourceRegistry dataSourceRegistry,
-          @NonNull List<DynamicInterfaceDefinition> dynamicInterfaceDefinitions) {
+      @NonNull Vertx vertx,
+      @NonNull DataSourceRegistry dataSourceRegistry,
+      @NonNull List<DynamicInterfaceDefinition> dynamicInterfaceDefinitions) {
     checkDynamicInterfaceDefinitions(dynamicInterfaceDefinitions);
     this.vertx = vertx;
     this.dataSourceRegistry = dataSourceRegistry;
     this.dataSourceIdConfigMap =
-            dynamicInterfaceDefinitions.stream()
-                    .map(c -> new AbstractMap.SimpleImmutableEntry<>(c.getDataSourceId(), c))
-                    .collect(groupingBy(Map.Entry::getKey, mapping(Map.Entry::getValue, toList())));
+        dynamicInterfaceDefinitions.stream()
+            .map(c -> new AbstractMap.SimpleImmutableEntry<>(c.getDataSourceId(), c))
+            .collect(groupingBy(Map.Entry::getKey, mapping(Map.Entry::getValue, toList())));
   }
 
   @Override
@@ -73,20 +73,21 @@ public final class HttpRequestHandlerBuilder implements Supplier<Handler<HttpSer
     Router router = Router.router(vertx);
     router.route().handler(BodyHandler.create(false));
     Map<String, DynamicInterfaceDefinition> stmtIdConfigMap = new HashMap<>();
-    for (Map.Entry<String, List<DynamicInterfaceDefinition>> entry : dataSourceIdConfigMap.entrySet()) {
+    for (Map.Entry<String, List<DynamicInterfaceDefinition>> entry :
+        dataSourceIdConfigMap.entrySet()) {
       stmtIdConfigMap.clear();
       SqlSessionFactory sqlSessionFactory =
-              createSqlSessionFactory(entry.getKey(), entry.getValue(), stmtIdConfigMap);
+          createSqlSessionFactory(entry.getKey(), entry.getValue(), stmtIdConfigMap);
       for (Map.Entry<String, DynamicInterfaceDefinition> entry1 : stmtIdConfigMap.entrySet()) {
         DynamicInterfaceDefinition definition = entry1.getValue();
         GeneralQueryHandler queryHandler =
-                new GeneralQueryHandler(
-                        definition.getParameterScopes(),
-                        definition.getParameterValidation().orElse(null),
-                        sqlSessionFactory,
-                        entry1.getKey(),
-                        definition.unwrapArray(),
-                        objectMapper);
+            new GeneralQueryHandler(
+                definition.getParameterScopes(),
+                definition.getParameterValidation().orElse(null),
+                sqlSessionFactory,
+                entry1.getKey(),
+                definition.unwrapArray(),
+                objectMapper);
         Set<HttpMethod> httpMethods = definition.getHttpMethods();
         if (httpMethods == null || httpMethods.isEmpty()) {
           router.route(definition.getUri()).handler(queryHandler);
@@ -101,14 +102,14 @@ public final class HttpRequestHandlerBuilder implements Supplier<Handler<HttpSer
   }
 
   private SqlSessionFactory createSqlSessionFactory(
-          String dataSourceId,
-          Iterable<DynamicInterfaceDefinition> dynamicInterfaceDefinitions,
-          Map<String, DynamicInterfaceDefinition> stmtIdConfigMap) {
+      String dataSourceId,
+      Iterable<DynamicInterfaceDefinition> dynamicInterfaceDefinitions,
+      Map<String, DynamicInterfaceDefinition> stmtIdConfigMap) {
     DataSource dataSource = dataSourceRegistry.apply(dataSourceId);
     Environment environment =
-            new Environment(dataSourceId, new JdbcTransactionFactory(), dataSource);
+        new Environment(dataSourceId, new JdbcTransactionFactory(), dataSource);
     JacksonBindingConfiguration configuration =
-            new JacksonBindingConfiguration(environment, objectMapper);
+        new JacksonBindingConfiguration(environment, objectMapper);
     for (DynamicInterfaceDefinition definition : dynamicInterfaceDefinitions) {
       String stmtId = stmtId(definition.getDataSourceId(), definition.getUri());
       configuration.addMappedStatement(createMappedStatement(definition, configuration, stmtId));
@@ -118,50 +119,60 @@ public final class HttpRequestHandlerBuilder implements Supplier<Handler<HttpSer
   }
 
   private MappedStatement createMappedStatement(
-          DynamicInterfaceDefinition definition, Configuration configuration, String stmtId) {
+      DynamicInterfaceDefinition definition, Configuration configuration, String stmtId) {
     return new MappedStatement.Builder(
             configuration,
             stmtId,
             configuration
-                    .getLanguageRegistry()
-                    .getDefaultDriver()
-                    .createSqlSource(
-                            configuration,
-                            StringUtils.join(definition.getSqlScriptSegments(), ' ').trim(),
-                            ObjectNode.class),
+                .getLanguageRegistry()
+                .getDefaultDriver()
+                .createSqlSource(
+                    configuration,
+                    StringUtils.join(definition.getSqlScriptSegments(), ' ').trim(),
+                    ObjectNode.class),
             SqlCommandType.SELECT)
-            .resultMaps(
-                    Collections.singletonList(
-                            new ResultMap.Builder(
-                                    configuration, stmtId + "-resultMap", ObjectNode.class, Collections.emptyList())
-                                    .build()))
-            .build();
+        .resultMaps(
+            Collections.singletonList(
+                new ResultMap.Builder(
+                        configuration,
+                        stmtId + "-resultMap",
+                        ObjectNode.class,
+                        Collections.emptyList())
+                    .build()))
+        .build();
   }
 
   private String stmtId(String dataSourceId, String uri) {
     return Strings.lenientFormat("%s(%s)#%s", dataSourceId, uri, STMT_COUNTER.incrementAndGet());
   }
 
-  private void checkDynamicInterfaceDefinitions(List<DynamicInterfaceDefinition> dynamicInterfaceDefinitions) {
-    Preconditions.checkArgument(!dynamicInterfaceDefinitions.isEmpty(), "empty dynamicInterfaceDefinitions!");
+  private void checkDynamicInterfaceDefinitions(
+      List<DynamicInterfaceDefinition> dynamicInterfaceDefinitions) {
+    Preconditions.checkArgument(
+        !dynamicInterfaceDefinitions.isEmpty(), "empty dynamicInterfaceDefinitions!");
     Map<String, Set<HttpMethod>> uriHttpMethodsMap = new HashMap<>();
     for (DynamicInterfaceDefinition definition : dynamicInterfaceDefinitions) {
       String uri = definition.getUri();
       Preconditions.checkArgument(
-              StringUtils.isNotEmpty(uri) && URI_PATTERN.matcher(uri).matches(),
-              "illegal uri pattern: `%s`, valid pattern is: `%s`",
-              uri,
-              URI_PATTERN.pattern());
+          StringUtils.isNotEmpty(uri) && URI_PATTERN.matcher(uri).matches(),
+          "illegal uri pattern: `%s`, valid pattern is: `%s`",
+          uri,
+          URI_PATTERN.pattern());
       if (definition.getHttpMethods() == null || definition.getHttpMethods().isEmpty()) {
         Preconditions.checkArgument(
-                uriHttpMethodsMap.put(uri, new HashSet<>(HttpMethod.values())) == null, "duplicated uri: `%s`", uri);
+            uriHttpMethodsMap.put(uri, new HashSet<>(HttpMethod.values())) == null,
+            "duplicated uri: `%s`",
+            uri);
         continue;
       }
       for (HttpMethod httpMethod : definition.getHttpMethods()) {
         Preconditions.checkArgument(
-                uriHttpMethodsMap.compute(uri, (k, v) -> v == null ? new HashSet<>() : v).add(httpMethod),
-                "duplicated uri: `%s(%s)`", uri, httpMethod
-        );
+            uriHttpMethodsMap
+                .compute(uri, (k, v) -> v == null ? new HashSet<>() : v)
+                .add(httpMethod),
+            "duplicated uri: `%s(%s)`",
+            uri,
+            httpMethod);
       }
     }
   }

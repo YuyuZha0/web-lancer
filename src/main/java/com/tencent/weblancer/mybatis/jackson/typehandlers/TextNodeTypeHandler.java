@@ -13,16 +13,22 @@ import java.sql.SQLException;
  * @author fishzhao
  * @since 2020-12-25
  */
-@MappedJdbcTypes({JdbcType.CHAR, JdbcType.VARCHAR, JdbcType.DATE, JdbcType.TIME, JdbcType.TIMESTAMP})
+@MappedJdbcTypes({
+  JdbcType.CHAR,
+  JdbcType.VARCHAR,
+  JdbcType.DATE,
+  JdbcType.TIME,
+  JdbcType.TIMESTAMP
+})
 public final class TextNodeTypeHandler extends BaseJacksonTypeHandler<TextNode> {
-
 
   private TextNode textNodeOrNull(String s) {
     return TextNode.valueOf(s);
   }
 
   @Override
-  void setNonNullParameter(PreparedStatement ps, int i, TextNode parameter, JdbcType jdbcType) throws SQLException {
+  void setNonNullParameter(PreparedStatement ps, int i, TextNode parameter, JdbcType jdbcType)
+      throws SQLException {
     ps.setString(i, parameter.asText());
   }
 
