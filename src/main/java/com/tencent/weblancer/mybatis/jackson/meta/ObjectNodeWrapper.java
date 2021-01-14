@@ -3,6 +3,7 @@ package com.tencent.weblancer.mybatis.jackson.meta;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.collect.Lists;
 import org.apache.ibatis.reflection.MetaObject;
 import org.apache.ibatis.reflection.SystemMetaObject;
 import org.apache.ibatis.reflection.factory.ObjectFactory;
@@ -10,8 +11,6 @@ import org.apache.ibatis.reflection.property.PropertyTokenizer;
 import org.apache.ibatis.reflection.wrapper.ObjectWrapper;
 
 import java.util.List;
-import java.util.Spliterators;
-import java.util.stream.StreamSupport;
 
 /**
  * @author fishzhao
@@ -91,9 +90,7 @@ public final class ObjectNodeWrapper implements ObjectWrapper {
 
   @Override
   public String[] getGetterNames() {
-    return StreamSupport.stream(
-            Spliterators.spliteratorUnknownSize(objectNode.fieldNames(), 0)
-            , false).toArray(String[]::new);
+    return Lists.newArrayList(objectNode.fieldNames()).toArray(new String[0]);
   }
 
   @Override
