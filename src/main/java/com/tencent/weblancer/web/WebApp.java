@@ -33,7 +33,7 @@ import java.util.concurrent.Executors;
  */
 @RequiredArgsConstructor
 @Slf4j
-public final class WebApp implements AutoCloseable {
+public final class WebApp {
 
   private final AppMetaConfig metaConfig;
   private final ObjectMapper configMapper;
@@ -131,7 +131,4 @@ public final class WebApp implements AutoCloseable {
     }
   }
 
-  @Override
-  public void close() {
-  }
 }
