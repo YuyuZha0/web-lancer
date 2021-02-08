@@ -5,9 +5,10 @@ import com.fasterxml.jackson.core.json.JsonReadFeature;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.tencent.weblancer.web.conf.AppMetaConfig;
 import com.tencent.weblancer.web.conf.DynamicInterfaceDefinition;
-import com.tencent.weblancer.web.conf.JsonInterfaceDefinition;
+import com.tencent.weblancer.web.conf.FileInterfaceDefinitionSupplier;
 import com.tencent.weblancer.web.repo.DataSourceRegistry;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
@@ -17,15 +18,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executors;
 
 /**
  * @author fishzhao
@@ -48,6 +45,7 @@ public final class WebApp {
         new ObjectMapper()
             .enable(JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS.mappedFeature())
             .enable(JsonParser.Feature.ALLOW_COMMENTS)
+            .enable(JsonReadFeature.ALLOW_SINGLE_QUOTES.mappedFeature())
             .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
 
     AppMetaConfig metaConfig;
@@ -58,7 +56,7 @@ public final class WebApp {
     new WebApp(metaConfig, configMapper).start();
   }
 
-  private void start() throws Exception {
+  private void start()  {
     metaConfig.validate();
     DataSourceRegistry dataSourceRegistry = new DataSourceRegistry();
     metaConfig
@@ -67,22 +65,8 @@ public final class WebApp {
             objectNode ->
                 dataSourceRegistry.registerDataSourceConfig(
                     objectNode.remove("id").asText(), objectNode));
-    List<DynamicInterfaceDefinition> dynamicInterfaceDefinitions = new ArrayList<>();
-    for (String strPath : metaConfig.getInterfaceDefinitionPath()) {
-      Path path = Paths.get(strPath);
-      if (!Files.isReadable(path)) {
-        log.warn("Path [{}] is not readable ank will be skipped!", path);
-        continue;
-      }
-      if (Files.isDirectory(path)) {
-        Files.walk(path)
-            .filter(Files::isReadable)
-            .forEach(p -> addInterfaceDefinition(dynamicInterfaceDefinitions, p));
-      } else {
-        addInterfaceDefinition(dynamicInterfaceDefinitions, path);
-      }
-    }
-    log.info("[{}] interface(s) detected.", dynamicInterfaceDefinitions.size());
+    List<DynamicInterfaceDefinition> dynamicInterfaceDefinitions =
+        new FileInterfaceDefinitionSupplier(metaConfig, configMapper).get();
 
     Vertx vertx = Vertx.vertx(new VertxOptions().setPreferNativeTransport(true));
     HttpRequestHandlerBuilder httpRequestHandlerBuilder =
@@ -98,9 +82,17 @@ public final class WebApp {
         .onSuccess(
             s -> log.info("Start httpServer successfully listening on port: {}", s.actualPort()));
 
+    addShutdownHook(vertx, httpServer, dataSourceRegistry);
+  }
+
+  private void addShutdownHook(
+      Vertx vertx, HttpServer httpServer, DataSourceRegistry dataSourceRegistry) {
     Runtime.getRuntime()
         .addShutdownHook(
-            Executors.defaultThreadFactory()
+            new ThreadFactoryBuilder()
+                .setNameFormat("web-lancer-shutdownHook-%d")
+                .setDaemon(false)
+                .build()
                 .newThread(
                     () ->
                         httpServer
@@ -111,26 +103,5 @@ public final class WebApp {
                                   vertx.close();
                                   dataSourceRegistry.close();
                                 })));
-  }
-
-  private void addInterfaceDefinition(
-      List<DynamicInterfaceDefinition> dynamicInterfaceDefinitions, Path path) {
-    try (InputStream in = Files.newInputStream(path, StandardOpenOption.READ)) {
-      List<JsonInterfaceDefinition> jsonInterfaceDefinitions =
-          configMapper.readValue(
-              in,
-              configMapper
-                  .getTypeFactory()
-                  .constructCollectionType(ArrayList.class, JsonInterfaceDefinition.class));
-      if (jsonInterfaceDefinitions != null && !jsonInterfaceDefinitions.isEmpty()) {
-        log.info(
-            "Found [{}] interface config item(s) in file: {}",
-            jsonInterfaceDefinitions.size(),
-            path);
-        dynamicInterfaceDefinitions.addAll(jsonInterfaceDefinitions);
-      }
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
   }
 }

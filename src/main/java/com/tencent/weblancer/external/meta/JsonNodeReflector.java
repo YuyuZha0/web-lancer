@@ -1,4 +1,4 @@
-package com.tencent.weblancer.mybatis.jackson.meta;
+package com.tencent.weblancer.external.meta;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.ibatis.reflection.Reflector;

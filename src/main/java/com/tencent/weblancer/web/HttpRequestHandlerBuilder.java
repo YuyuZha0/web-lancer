@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
-import com.tencent.weblancer.mybatis.jackson.JacksonBindingConfiguration;
+import com.tencent.weblancer.external.JacksonBindingConfiguration;
 import com.tencent.weblancer.web.conf.DynamicInterfaceDefinition;
 import com.tencent.weblancer.web.handler.GeneralQueryHandler;
 import com.tencent.weblancer.web.repo.DataSourceRegistry;

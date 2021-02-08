@@ -1,82 +1,98 @@
-### mybatis-jackson
+### web-lancer
 
-```xml
-<dependency>
-    <groupId>com.tencent</groupId>
-    <artifactId>mybatis-jackson</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
-</dependency>
-```
+#### What is web-lancer?
+
+**web-lancer is a lite framework that allows you to build web interfaces with the minimal work.**
+
+#### Features
+
+- The `sqlTemplate` syntax is inherited from `mybatis`, you can use it with nothing special.
+- Use standard `jsonScmema` as parameter validation, forget the ugly parameter validation code.
+- `Vert.x` based web application, you can gain all `NIO` benefits (however, `JDBC` with `executeBlocking`).
+- The `web-lancer` framework is only for query use, so the update operation is not supported.
+
+#### Simple Example
 
 
-#### Usages
+##### application.json
 
-
-```java
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.apache.ibatis.annotations.Select;
-
-/**
- * @author fishzhao
- * @since 2020-12-28
- */
-public interface StudentMapper {
-
-  @Select("select id, name from t_student")
-  ArrayNode selectStudentList();
-
-  @Select("select * from t_student where id=#{test[0].id} limit 1")
-  ObjectNode selectStudent(JsonNode param);
-}
-```
-
-```java
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.apache.ibatis.datasource.unpooled.UnpooledDataSource;
-import org.apache.ibatis.mapping.Environment;
-import org.apache.ibatis.session.SqlSession;
-import org.apache.ibatis.session.SqlSessionFactory;
-import org.apache.ibatis.session.SqlSessionFactoryBuilder;
-import org.apache.ibatis.transaction.jdbc.JdbcTransactionFactory;
-import org.junit.Test;
-
-import javax.sql.DataSource;
-import java.util.HashMap;
-import java.util.Map;
-
-/**
- * @author fishzhao
- * @since 2020-12-25
- */
-public class JacksonTypeHandlerTest {
-
-  @Test
-  public void test() {
-    DataSource dataSource =
-        new UnpooledDataSource(
-            "com.mysql.cj.jdbc.Driver",
-            "jdbc:mysql://127.0.0.1:3306/test?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=UTF8&zeroDateTimeBehavior=convertToNull&useSSL=true",
-            "user",
-            "******");
-    Environment environment = new Environment("test", new JdbcTransactionFactory(), dataSource);
-    JacksonBindingConfiguration configuration = new JacksonBindingConfiguration();
-    configuration.setEnvironment(environment);
-    configuration.addMapper(StudentMapper.class);
-
-    SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(configuration);
-    try (SqlSession sqlSession = sqlSessionFactory.openSession()) {
-      StudentMapper studentMapper = sqlSession.getMapper(StudentMapper.class);
-      ObjectNode param = configuration.getObjectMapper().createObjectNode();
-      param.putArray("test").addObject().put("id", 1);
-      System.out.println(studentMapper.selectStudent(param));
-      Map<String, Object> map = new HashMap<>();
-      Map<String, Object> map1 = new HashMap<>();
-      map1.put("id", 1);
-      map.put("test", map1);
-      System.out.println(studentMapper.selectStudentList());
+```json
+{
+  "serverPort": 8080, 
+  "dataSources": [
+    {
+      "jdbcUrl": "jdbc:mysql://127.0.0.1:3306/common_data?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=UTF8&zeroDateTimeBehavior=convertToNull&useSSL=true",
+      "username": "user",
+      "password": "*****",
+      "driverClassName": "com.mysql.cj.jdbc.Driver",
+      "id": "default" // an explicted id is requied!
     }
-  }
+  ],
+  "interfaceDefinitionPath": [
+    "/Users/fishzhao/IdeaProjects/web-lancer/conf/interface.json"
+  ]
 }
+```
+
+##### interface.json
+
+
+```json
+{
+  "dataSourceId": "default",
+  "httpMethods": [
+    "GET",
+    "POST"
+  ],
+  "uri": "/getKaInfo",
+  "parameterValidation": {
+    "type": "object",
+    "properties": {
+      "kaId": {
+        "type": "integer"
+      },
+      "chanWxappScene": {
+        "type": "array",
+        "items": {
+          "type": "integer"
+        }
+      }
+    }
+  },
+  "parameterScopes": [
+    "BODY",
+    "QUERY_STRING"
+  ],
+  // is set to "true", the reseult data will be a json object instead of an array 
+  "unwrapArray": false,
+  "sqlScriptsSegments": [
+    "<script>",
+    "select * from channel_wxapp",
+    "<where>",
+    "<if test=\"kaId != null\">",
+    "ka_id = #{kaId}",
+    "</if>",
+    "<if test=\"chanWxappScene != null\">",
+    "AND chan_wxapp_scene in",
+    "<foreach item=\"item\" index=\"index\" collection=\"chanWxappScene\" open=\"(\" separator=\",\" close=\")\">",
+    "#{item}",
+    "</foreach>",
+    "</if>",
+    "</where>",
+    "limit 100",
+    "</script>"
+  ]
+}
+```
+
+To start the web server, use the following command line:
+
+```bash
+java -jar web-lancer-0.0.1-SNAPSHOT.jar application.json 
+```
+
+then you can make a request to the server:
+
+```bash
+curl 127.0.0.1:8080/getKaInfo -X POST -d '{"kaId":1106}'
 ```

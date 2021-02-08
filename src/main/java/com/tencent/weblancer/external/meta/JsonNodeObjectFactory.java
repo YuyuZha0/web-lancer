@@ -1,4 +1,4 @@
-package com.tencent.weblancer.mybatis.jackson.meta;
+package com.tencent.weblancer.external.meta;
 
 import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.JsonNode;

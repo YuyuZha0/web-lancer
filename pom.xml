@@ -16,17 +16,16 @@
         <maven.compiler.release>8</maven.compiler.release>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <jackson.version>2.11.2</jackson.version>
+        <jackson.version>2.12.1</jackson.version>
         <mybatis.version>3.5.5</mybatis.version>
         <slf4j.version>1.7.25</slf4j.version>
-        <guava.version>29.0-jre</guava.version>
         <logback.version>1.2.3</logback.version>
         <lombok.version>1.18.12</lombok.version>
         <caffeine.version>2.8.1</caffeine.version>
-        <vertx.version>4.0.0</vertx.version>
-        <netty.version>4.1.49.Final</netty.version>
+        <vertx.version>4.0.2</vertx.version>
+        <netty.version>4.1.52.Final</netty.version>
         <commons-lang3.version>3.9</commons-lang3.version>
-        <guava.version>29.0-jre</guava.version>
+        <guava.version>30.1-jre</guava.version>
         <hikari.version>3.4.5</hikari.version>
         <lombok.version>1.18.12</lombok.version>
     </properties>
@@ -117,7 +116,7 @@
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
             <version>8.0.22</version>
-<!--            <scope>test</scope>-->
+            <!--            <scope>test</scope>-->
         </dependency>
     </dependencies>
 

@@ -1,4 +1,4 @@
-package com.tencent.weblancer.mybatis.jackson.typehandlers;
+package com.tencent.weblancer.external.typehandlers;
 
 import com.fasterxml.jackson.databind.node.DecimalNode;
 import org.apache.ibatis.type.JdbcType;

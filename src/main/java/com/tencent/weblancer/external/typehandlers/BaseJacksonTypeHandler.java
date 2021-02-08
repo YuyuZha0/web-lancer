@@ -1,4 +1,4 @@
-package com.tencent.weblancer.mybatis.jackson.typehandlers;
+package com.tencent.weblancer.external.typehandlers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.ibatis.executor.result.ResultMapException;

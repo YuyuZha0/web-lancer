@@ -1,4 +1,4 @@
-package com.tencent.weblancer.mybatis.jackson.meta;
+package com.tencent.weblancer.external.meta;
 
 import org.apache.ibatis.reflection.Reflector;
 import org.apache.ibatis.reflection.ReflectorFactory;
