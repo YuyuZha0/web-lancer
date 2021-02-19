@@ -13,6 +13,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 /**
  * @author fishzhao
@@ -36,21 +37,18 @@ public final class FileInterfaceDefinitionSupplier
     List<DynamicInterfaceDefinition> dynamicInterfaceDefinitions = new ArrayList<>();
     for (String strPath : appMetaConfig.getInterfaceDefinitionPath()) {
       Path path = Paths.get(strPath);
-      if (!Files.isReadable(path)) {
-        log.warn("Path [{}] is not readable ank will be skipped!", path);
-        continue;
-      }
       if (Files.isDirectory(path)) {
-        try {
-          Files.walk(path)
-              .filter(p -> !Files.isDirectory(p))
-              .filter(Files::isReadable)
+        try (Stream<Path> pathStream = Files.walk(path)) {
+          pathStream
+              .filter(Files::isRegularFile)
               .forEach(p -> addInterfaceDefinition(dynamicInterfaceDefinitions, p));
         } catch (IOException e) {
           throw new RuntimeException(e);
         }
-      } else {
+      } else if (Files.isRegularFile(path)) {
         addInterfaceDefinition(dynamicInterfaceDefinitions, path);
+      } else {
+        log.warn("Path [{}] is not valid and will be skipped!", path);
       }
     }
     log.info("[{}] interface(s) detected.", dynamicInterfaceDefinitions.size());

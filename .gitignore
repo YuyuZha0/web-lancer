@@ -5,4 +5,4 @@ target
 .DS_Store
 logs
 dependency-reduced-pom.xml
-conf
+/conf
